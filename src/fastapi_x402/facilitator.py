@@ -6,12 +6,7 @@ from typing import Any, Optional
 
 import httpx
 
-from .models import (
-    PaymentRequirements,
-    SettleResponse,
-    VerifyRequest,
-    VerifyResponse,
-)
+from .models import PaymentRequirements, SettleResponse, VerifyRequest, VerifyResponse
 
 
 def to_json_safe(data: Any) -> Any:
