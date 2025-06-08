@@ -2,7 +2,7 @@
 
 import base64
 import json
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 import httpx
 
@@ -154,7 +154,7 @@ class FacilitatorClient:
 
     async def verify_and_settle_payment(
         self, payment_header: str, payment_requirements: PaymentRequirements
-    ) -> tuple[VerifyResponse, SettleResponse]:
+    ) -> Tuple[VerifyResponse, SettleResponse]:
         """Verify and immediately settle payment in one call (like TypeScript version)."""
         # First verify
         verify_response = await self.verify_payment(
