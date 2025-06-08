@@ -7,7 +7,7 @@ name = "fastapi-x402"
 version = "0.1.0"
 description = "One-liner x402 pay-per-request for FastAPI endpoints"
 readme = "README.md"
-license = "MIT"
+license = { text = "MIT" }
 authors = [
     {name = "FastAPI x402", email = "hello@fastapi-x402.dev"}
 ]
