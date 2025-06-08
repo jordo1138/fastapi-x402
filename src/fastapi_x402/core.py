@@ -1,14 +1,15 @@
 """Core functionality for FastAPI x402."""
 
 import functools
-from typing import Optional, Dict, Any, Callable, Union, List
+from typing import Any, Callable, Dict, List, Optional, Union
+
 from .models import X402Config
 from .networks import (
-    get_network_config, 
-    get_default_asset_config, 
+    SupportedNetwork,
+    get_default_asset_config,
+    get_network_config,
     get_supported_networks,
     validate_network_asset_combination,
-    SupportedNetwork
 )
 
 # Global configuration
@@ -25,7 +26,7 @@ def init_x402(
     default_expires_in: int = 300,
 ) -> None:
     """Initialize global x402 configuration.
-    
+
     Args:
         pay_to: Wallet address to receive payments
         network: Blockchain network(s) to support. Can be:
@@ -39,16 +40,18 @@ def init_x402(
         default_expires_in: Default payment expiration in seconds
     """
     global _config
-    
+
     # Handle special network values
     if isinstance(network, str):
         if network == "all":
             networks = get_supported_networks()
         elif network == "testnets":
             from .networks import get_supported_testnets
+
             networks = get_supported_testnets()
         elif network == "mainnets":
             from .networks import get_supported_mainnets
+
             networks = get_supported_mainnets()
         else:
             # Validate single network
@@ -59,7 +62,7 @@ def init_x402(
         for net in network:
             get_network_config(net)  # Raises if invalid
         networks = network
-    
+
     _config = X402Config(
         pay_to=pay_to,
         network=networks[0] if len(networks) == 1 else networks,
@@ -82,21 +85,22 @@ def pay(
     expires_in: Optional[int] = None,
 ) -> Callable:
     """Decorator to mark an endpoint as requiring payment.
-    
+
     Args:
         amount: Payment amount (e.g., "$0.01" or "1000000")
         asset: Payment asset (defaults to global config)
         expires_in: Payment expiration in seconds (defaults to global config)
-    
+
     Example:
         @pay("$0.01")
         @app.get("/thumbnail")
         def thumbnail(url: str):
             return {"thumb_url": create_thumb(url)}
     """
+
     def decorator(func: Callable) -> Callable:
         global _payment_required_funcs
-        
+
         # Store payment metadata by function name for lookup
         func_name = func.__name__
         _payment_required_funcs[func_name] = {
@@ -104,7 +108,7 @@ def pay(
             "asset": asset,
             "expires_in": expires_in,
         }
-        
+
         # Also store in the old way for compatibility
         endpoint_key = f"{func.__module__}.{func.__name__}"
         _endpoint_prices[endpoint_key] = {
@@ -112,11 +116,11 @@ def pay(
             "asset": asset,
             "expires_in": expires_in,
         }
-        
+
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
-        
+
         # Mark the function as requiring payment
         wrapper._x402_payment_required = True
         wrapper._x402_payment_config = {
@@ -124,9 +128,9 @@ def pay(
             "asset": asset,
             "expires_in": expires_in,
         }
-        
+
         return wrapper
-    
+
     return decorator
 
 
@@ -137,12 +141,12 @@ def get_endpoint_payment_config(endpoint_key: str) -> Optional[Dict[str, Any]]:
 
 def requires_payment(func: Callable) -> bool:
     """Check if a function requires payment."""
-    return hasattr(func, '_x402_payment_required') and func._x402_payment_required
+    return hasattr(func, "_x402_payment_required") and func._x402_payment_required
 
 
 def get_payment_config(func: Callable) -> Optional[Dict[str, Any]]:
     """Get payment configuration from a function."""
-    return getattr(func, '_x402_payment_config', None)
+    return getattr(func, "_x402_payment_config", None)
 
 
 def requires_payment_by_name(func_name: str) -> bool:
@@ -164,7 +168,7 @@ def get_config_for_network(network: str) -> Dict[str, Any]:
     """Get configuration details for a specific network."""
     network_config = get_network_config(network)
     asset_config = get_default_asset_config(network)
-    
+
     return {
         "network": network_config.name,
         "chain_id": network_config.chain_id,
@@ -176,9 +180,9 @@ def get_config_for_network(network: str) -> Dict[str, Any]:
             "decimals": asset_config.decimals,
             "eip712": {
                 "name": asset_config.eip712_name,
-                "version": asset_config.eip712_version
-            }
-        }
+                "version": asset_config.eip712_version,
+            },
+        },
     }
 
 

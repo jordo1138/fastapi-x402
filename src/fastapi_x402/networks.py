@@ -3,14 +3,15 @@ Network and asset configurations for x402 payments.
 Synchronized with the official Coinbase x402 facilitator supported chains and tokens.
 """
 
-from typing import Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
+from typing import Dict, List, Optional
 
 
 @dataclass
 class AssetConfig:
     """Configuration for a supported asset on a specific network."""
+
     address: str
     name: str
     symbol: str = "USDC"
@@ -27,6 +28,7 @@ class AssetConfig:
 @dataclass
 class NetworkConfig:
     """Configuration for a supported network."""
+
     name: str
     chain_id: int
     is_testnet: bool = False
@@ -40,8 +42,9 @@ class NetworkConfig:
 
 class SupportedNetwork(Enum):
     """Supported networks for x402 payments."""
+
     BASE_SEPOLIA = "base-sepolia"
-    BASE = "base" 
+    BASE = "base"
     AVALANCHE_FUJI = "avalanche-fuji"
     AVALANCHE = "avalanche"
     IOTEX = "iotex"
@@ -62,12 +65,11 @@ NETWORK_CONFIGS: Dict[str, NetworkConfig] = {
                 symbol="USDC",
                 decimals=6,
                 eip712_name="USDC",
-                eip712_version="2"
+                eip712_version="2",
             )
-        }
+        },
     ),
-    
-    # Base Mainnet  
+    # Base Mainnet
     "base": NetworkConfig(
         name="base",
         chain_id=8453,
@@ -76,14 +78,13 @@ NETWORK_CONFIGS: Dict[str, NetworkConfig] = {
             "usdc": AssetConfig(
                 address="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
                 name="USDC",
-                symbol="USDC", 
+                symbol="USDC",
                 decimals=6,
                 eip712_name="USDC",
-                eip712_version="2"
+                eip712_version="2",
             )
-        }
+        },
     ),
-    
     # Avalanche Fuji (Testnet)
     "avalanche-fuji": NetworkConfig(
         name="avalanche-fuji",
@@ -96,11 +97,10 @@ NETWORK_CONFIGS: Dict[str, NetworkConfig] = {
                 symbol="USDC.e",
                 decimals=6,
                 eip712_name="USD Coin",
-                eip712_version="2"
+                eip712_version="2",
             )
-        }
+        },
     ),
-    
     # Avalanche Mainnet
     "avalanche": NetworkConfig(
         name="avalanche",
@@ -113,11 +113,10 @@ NETWORK_CONFIGS: Dict[str, NetworkConfig] = {
                 symbol="USDC",
                 decimals=6,
                 eip712_name="USDC",
-                eip712_version="2"
+                eip712_version="2",
             )
-        }
+        },
     ),
-    
     # IoTeX
     "iotex": NetworkConfig(
         name="iotex",
@@ -130,10 +129,10 @@ NETWORK_CONFIGS: Dict[str, NetworkConfig] = {
                 symbol="USDC.e",
                 decimals=6,
                 eip712_name="Bridged USDC",
-                eip712_version="2"
+                eip712_version="2",
             )
-        }
-    )
+        },
+    ),
 }
 
 
@@ -148,14 +147,16 @@ def get_supported_testnets() -> List[str]:
 
 
 def get_supported_mainnets() -> List[str]:
-    """Get list of supported mainnet names.""" 
+    """Get list of supported mainnet names."""
     return [name for name, config in NETWORK_CONFIGS.items() if not config.is_testnet]
 
 
 def get_network_config(network: str) -> NetworkConfig:
     """Get configuration for a specific network."""
     if network not in NETWORK_CONFIGS:
-        raise ValueError(f"Unsupported network: {network}. Supported networks: {get_supported_networks()}")
+        raise ValueError(
+            f"Unsupported network: {network}. Supported networks: {get_supported_networks()}"
+        )
     return NETWORK_CONFIGS[network]
 
 
@@ -164,7 +165,9 @@ def get_asset_config(network: str, asset: str = "usdc") -> AssetConfig:
     network_config = get_network_config(network)
     if asset not in network_config.assets:
         available_assets = list(network_config.assets.keys())
-        raise ValueError(f"Unsupported asset '{asset}' on network '{network}'. Available assets: {available_assets}")
+        raise ValueError(
+            f"Unsupported asset '{asset}' on network '{network}'. Available assets: {available_assets}"
+        )
     return network_config.assets[asset]
 
 
@@ -186,5 +189,9 @@ def validate_network_asset_combination(network: str, asset_address: str) -> bool
 
 
 # Convenience mappings for backward compatibility
-CHAIN_ID_TO_NETWORK = {config.chain_id: name for name, config in NETWORK_CONFIGS.items()}
-NETWORK_TO_CHAIN_ID = {name: config.chain_id for name, config in NETWORK_CONFIGS.items()}
+CHAIN_ID_TO_NETWORK = {
+    config.chain_id: name for name, config in NETWORK_CONFIGS.items()
+}
+NETWORK_TO_CHAIN_ID = {
+    name: config.chain_id for name, config in NETWORK_CONFIGS.items()
+}

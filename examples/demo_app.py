@@ -1,11 +1,12 @@
 """Demo FastAPI app with x402 payment integration."""
 
 import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
 # Import our x402 package
-from fastapi_x402 import init_x402, pay, PaymentMiddleware
+from fastapi_x402 import PaymentMiddleware, init_x402, pay
 
 # Create FastAPI app
 app = FastAPI(
@@ -17,8 +18,12 @@ app = FastAPI(
 # Initialize x402 with your wallet address
 # In production, use environment variables
 init_x402(
-    pay_to=os.getenv("PAY_TO_ADDRESS", "0x9ecae3f1abfce10971353FD21bD8B4785473fD18"),  # Merchant wallet (receives payments)
-    facilitator_url=os.getenv("FACILITATOR_URL", "https://x402.org/facilitator"),  # Facilitator URL for Base Sepolia testnet
+    pay_to=os.getenv(
+        "PAY_TO_ADDRESS", "0x9ecae3f1abfce10971353FD21bD8B4785473fD18"
+    ),  # Merchant wallet (receives payments)
+    facilitator_url=os.getenv(
+        "FACILITATOR_URL", "https://x402.org/facilitator"
+    ),  # Facilitator URL for Base Sepolia testnet
     network="base-sepolia",  # Use testnet for easier testing
 )
 
@@ -33,10 +38,22 @@ async def root():
     return {
         "message": "Welcome to FastAPI x402 Demo!",
         "paid_endpoints": [
-            {"path": "/thumbnail", "price": "$0.002", "description": "Generate thumbnail"},
-            {"path": "/premium-data", "price": "$0.01", "description": "Access premium data"},
-            {"path": "/ai-summary", "price": "$0.05", "description": "AI-powered text summary"},
-        ]
+            {
+                "path": "/thumbnail",
+                "price": "$0.002",
+                "description": "Generate thumbnail",
+            },
+            {
+                "path": "/premium-data",
+                "price": "$0.01",
+                "description": "Access premium data",
+            },
+            {
+                "path": "/ai-summary",
+                "price": "$0.05",
+                "description": "AI-powered text summary",
+            },
+        ],
     }
 
 
@@ -50,7 +67,7 @@ async def thumbnail(url: str):
         "thumbnail_url": f"https://thumbnails.example.com/thumb/{hash(url)}.jpg",
         "original_url": url,
         "generated_at": "2024-12-06T10:30:00Z",
-        "cost": "$0.002"
+        "cost": "$0.002",
     }
 
 
@@ -65,7 +82,7 @@ async def premium_data():
             "base": {"price": 1.00, "change_24h": 0.01},
         },
         "timestamp": "2024-12-06T10:30:00Z",
-        "cost": "$0.01"
+        "cost": "$0.01",
     }
 
 
@@ -74,18 +91,22 @@ async def premium_data():
 async def ai_summary(text: str):
     """Generate AI summary of text - costs $0.05."""
     if not text or len(text.strip()) < 10:
-        raise HTTPException(status_code=400, detail="Text must be at least 10 characters")
-    
+        raise HTTPException(
+            status_code=400, detail="Text must be at least 10 characters"
+        )
+
     # In a real app, you'd use an AI service
     word_count = len(text.split())
-    summary = f"This {word_count}-word text discusses various topics and provides insights."
-    
+    summary = (
+        f"This {word_count}-word text discusses various topics and provides insights."
+    )
+
     return {
         "summary": summary,
         "original_length": len(text),
         "summary_length": len(summary),
         "compression_ratio": round(len(summary) / len(text), 2),
-        "cost": "$0.05"
+        "cost": "$0.05",
     }
 
 
@@ -98,7 +119,7 @@ async def quick_fact():
         "fact": "FastAPI x402 allows you to monetize APIs with just one decorator!",
         "category": "tech",
         "expires_in": "1 hour",
-        "cost": "$0.001"
+        "cost": "$0.001",
     }
 
 
@@ -111,15 +132,17 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     print("🚀 Starting FastAPI x402 Demo App")
     print("💳 Payment required endpoints:")
     print("  • GET /thumbnail?url=<url> - $0.002")
-    print("  • GET /premium-data - $0.01") 
+    print("  • GET /premium-data - $0.01")
     print("  • POST /ai-summary - $0.05")
     print("  • GET /quick-fact - $0.001")
-    print("\n💡 Try calling any paid endpoint without X-PAYMENT header to see 402 response")
-    
+    print(
+        "\n💡 Try calling any paid endpoint without X-PAYMENT header to see 402 response"
+    )
+
     uvicorn.run(
         "demo_app:app",
         host="0.0.0.0",

@@ -1,12 +1,13 @@
 """Tests for x402 data models."""
 
 import pytest
+
 from fastapi_x402.models import (
     PaymentRequirements,
-    VerifyRequest,
-    VerifyResponse,
     SettleRequest,
     SettleResponse,
+    VerifyRequest,
+    VerifyResponse,
     X402Config,
 )
 
@@ -22,7 +23,7 @@ def test_payment_requirements():
         pay_to="0x123",
         facilitator="https://facilitator.example.com",
     )
-    
+
     assert req.resource == "GET /api/data"
     assert req.price == "$0.01"
     assert req.asset == "USDC"
@@ -40,7 +41,7 @@ def test_payment_requirements_defaults():
         pay_to="0x123",
         facilitator="https://facilitator.example.com",
     )
-    
+
     assert req.asset == "USDC"  # default
     assert req.network == "base-mainnet"  # default
     assert req.expires_in == 300  # default
@@ -54,12 +55,12 @@ def test_verify_request():
         pay_to="0x123",
         facilitator="https://facilitator.example.com",
     )
-    
+
     req = VerifyRequest(
         payment_header="payment_header_value",
         payment_requirements=payment_req,
     )
-    
+
     assert req.payment_header == "payment_header_value"
     assert req.payment_requirements == payment_req
 
@@ -70,7 +71,7 @@ def test_verify_response_success():
         is_valid=True,
         payment_id="payment_123",
     )
-    
+
     assert resp.is_valid is True
     assert resp.payment_id == "payment_123"
     assert resp.error is None
@@ -82,7 +83,7 @@ def test_verify_response_error():
         is_valid=False,
         error="Invalid payment signature",
     )
-    
+
     assert resp.is_valid is False
     assert resp.payment_id is None
     assert resp.error == "Invalid payment signature"
@@ -100,7 +101,7 @@ def test_settle_response_success():
         tx_status="SETTLED",
         tx_hash="0xabc123",
     )
-    
+
     assert resp.tx_status == "SETTLED"
     assert resp.tx_hash == "0xabc123"
     assert resp.error is None
@@ -112,7 +113,7 @@ def test_settle_response_error():
         tx_status="FAILED",
         error="Insufficient funds",
     )
-    
+
     assert resp.tx_status == "FAILED"
     assert resp.tx_hash is None
     assert resp.error == "Insufficient funds"
@@ -127,7 +128,7 @@ def test_x402_config():
         default_asset="DAI",
         default_expires_in=600,
     )
-    
+
     assert config.pay_to == "0x123"
     assert config.network == "base-testnet"
     assert config.facilitator_url == "https://test.facilitator.com"
@@ -138,7 +139,7 @@ def test_x402_config():
 def test_x402_config_defaults():
     """Test X402Config with default values."""
     config = X402Config(pay_to="0x123")
-    
+
     assert config.pay_to == "0x123"
     assert config.network == "base-mainnet"  # default
     assert config.facilitator_url == "https://facilitator.cdp.coinbase.com"  # default
