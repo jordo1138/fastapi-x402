@@ -19,7 +19,7 @@ class AssetConfig:
     eip712_name: Optional[str] = None
     eip712_version: str = "2"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Set default EIP712 name if not provided."""
         if self.eip712_name is None:
             self.eip712_name = self.name
@@ -32,9 +32,9 @@ class NetworkConfig:
     name: str
     chain_id: int
     is_testnet: bool = False
-    assets: Dict[str, AssetConfig] = None
+    assets: Optional[Dict[str, AssetConfig]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize empty assets dict if not provided."""
         if self.assets is None:
             self.assets = {}
@@ -163,6 +163,8 @@ def get_network_config(network: str) -> NetworkConfig:
 def get_asset_config(network: str, asset: str = "usdc") -> AssetConfig:
     """Get asset configuration for a specific network and asset."""
     network_config = get_network_config(network)
+    if network_config.assets is None:
+        raise ValueError(f"No assets configured for network '{network}'")
     if asset not in network_config.assets:
         available_assets = list(network_config.assets.keys())
         raise ValueError(
@@ -180,6 +182,8 @@ def validate_network_asset_combination(network: str, asset_address: str) -> bool
     """Validate that an asset address is supported on the given network."""
     try:
         network_config = get_network_config(network)
+        if network_config.assets is None:
+            return False
         for asset_config in network_config.assets.values():
             if asset_config.address.lower() == asset_address.lower():
                 return True

@@ -2,7 +2,7 @@
 
 import base64
 import json
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -23,7 +23,7 @@ from .models import PaymentRequirements
 class PaymentMiddleware(BaseHTTPMiddleware):
     """Middleware to handle x402 payment verification for FastAPI endpoints."""
 
-    def __init__(self, app, auto_settle: bool = True):
+    def __init__(self, app: Any, auto_settle: bool = True) -> None:
         """Initialize payment middleware.
 
         Args:
@@ -42,7 +42,7 @@ class PaymentMiddleware(BaseHTTPMiddleware):
             self._facilitator_client = FacilitatorClient(config.facilitator_url)
         return self._facilitator_client
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable) -> Any:
         """Process request and handle payment verification."""
 
         # Get the route handler function by trying to match the route

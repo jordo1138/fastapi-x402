@@ -25,7 +25,7 @@ class PaymentDependency:
             self._facilitator_client = FacilitatorClient(config.facilitator_url)
         return self._facilitator_client
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> None:
         """Check payment for the current request."""
 
         # Get the route handler function from the request
@@ -137,9 +137,14 @@ class PaymentDependency:
         # USDC contract address on Base Sepolia
         usdc_address = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 
+        # Use the first network if config.network is a list
+        network = (
+            config.network if isinstance(config.network, str) else config.network[0]
+        )
+
         return PaymentRequirements(
             scheme="exact",
-            network=config.network,
+            network=network,
             maxAmountRequired=atomic_amount,
             resource=resource,
             description=f"Payment required for {resource}",

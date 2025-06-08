@@ -4,7 +4,6 @@ import pytest
 
 from fastapi_x402.models import (
     PaymentRequirements,
-    SettleRequest,
     SettleResponse,
     VerifyRequest,
     VerifyResponse,

@@ -45,7 +45,7 @@ class SettleResponse(BaseModel):
     """Response from payment settlement."""
 
     success: bool
-    error_reason: Optional[str] = Field(alias="errorReason", default=None)
+    errorReason: Optional[str] = None
     payer: Optional[str] = None
     transaction: Optional[str] = None
     network: Optional[str] = None
@@ -61,7 +61,7 @@ class SettleResponse(BaseModel):
 
     @property
     def error(self) -> Optional[str]:
-        return self.error_reason
+        return self.errorReason
 
     class Config:
         allow_population_by_field_name = True

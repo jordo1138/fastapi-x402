@@ -2,7 +2,7 @@
 
 import base64
 import json
-from typing import Optional
+from typing import Any, Optional
 
 import httpx
 
@@ -14,7 +14,7 @@ from .models import (
 )
 
 
-def to_json_safe(data):
+def to_json_safe(data: Any) -> Any:
     """Convert bigint-like values to strings like TypeScript toJsonSafe function."""
     if isinstance(data, dict):
         return {key: to_json_safe(value) for key, value in data.items()}
@@ -153,7 +153,7 @@ class FacilitatorClient:
         except Exception as e:
             return SettleResponse(
                 success=False,
-                error_reason=f"Failed to settle payment: {str(e)}",
+                errorReason=f"Failed to settle payment: {str(e)}",
                 network="base-sepolia",
             )
 
@@ -165,9 +165,9 @@ class FacilitatorClient:
         verify_response = await self.verify_payment(
             payment_header, payment_requirements
         )
-        if not verify_response.is_valid:
+        if not verify_response.isValid:
             failed_settle = SettleResponse(
-                success=False, error_reason="Verification failed"
+                success=False, errorReason="Verification failed"
             )
             return verify_response, failed_settle
 
@@ -296,7 +296,7 @@ class FacilitatorClient:
                 error_reason = data.get("errorReason", f"HTTP {response.status_code}")
                 return SettleResponse(
                     success=False,
-                    error_reason=error_reason,
+                    errorReason=error_reason,
                 )
 
         except Exception as e:
@@ -309,9 +309,9 @@ class FacilitatorClient:
 
             return SettleResponse(
                 success=False,
-                error_reason=error_msg,
+                errorReason=error_msg,
             )
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the HTTP client."""
         await self.client.aclose()

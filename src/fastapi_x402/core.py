@@ -118,12 +118,12 @@ def pay(
         }
 
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
         # Mark the function as requiring payment
-        wrapper._x402_payment_required = True
-        wrapper._x402_payment_config = {
+        wrapper._x402_payment_required = True  # type: ignore[attr-defined]
+        wrapper._x402_payment_config = {  # type: ignore[attr-defined]
             "amount": amount,
             "asset": asset,
             "expires_in": expires_in,
