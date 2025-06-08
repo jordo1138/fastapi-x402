@@ -11,13 +11,13 @@ def test_init_x402():
     """Test x402 initialization."""
     init_x402(
         pay_to="0x123",
-        network="base-testnet",
+        network="base-sepolia",
         facilitator_url="https://test.facilitator.com",
     )
 
     config = get_config()
     assert config.pay_to == "0x123"
-    assert config.network == "base-testnet"
+    assert config.network == "base-sepolia"
     assert config.facilitator_url == "https://test.facilitator.com"
 
 
