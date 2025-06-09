@@ -5,8 +5,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from .core import get_config, get_payment_config, requires_payment
-from .facilitator import FacilitatorClient
+from .core import get_config, get_facilitator_client, get_payment_config, requires_payment
 from .models import PaymentRequirements
 
 
@@ -15,14 +14,13 @@ class PaymentDependency:
 
     def __init__(self, auto_settle: bool = True):
         self.auto_settle = auto_settle
-        self._facilitator_client: Optional[FacilitatorClient] = None
+        self._facilitator_client = None
 
     @property
-    def facilitator_client(self) -> FacilitatorClient:
+    def facilitator_client(self):
         """Get or create facilitator client."""
         if self._facilitator_client is None:
-            config = get_config()
-            self._facilitator_client = FacilitatorClient(config.facilitator_url)
+            self._facilitator_client = get_facilitator_client()
         return self._facilitator_client
 
     async def __call__(self, request: Request) -> None:
@@ -62,8 +60,7 @@ class PaymentDependency:
             )
 
             verify_response = await self.facilitator_client.verify_payment(
-                payment_header=payment_header,
-                payment_requirements=payment_requirements,
+                payment_header, payment_requirements
             )
 
             if not verify_response.isValid:
@@ -78,8 +75,7 @@ class PaymentDependency:
             # Settle payment if auto_settle is enabled
             if self.auto_settle and verify_response.payment_id:
                 settle_response = await self.facilitator_client.settle_payment(
-                    payment_header=payment_header,
-                    payment_requirements=payment_requirements,
+                    payment_header, payment_requirements
                 )
 
                 if settle_response.tx_status != "SETTLED":

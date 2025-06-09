@@ -1,7 +1,10 @@
 """Core functionality for FastAPI x402."""
 
 import functools
+import os
 from typing import Any, Callable, Dict, List, Optional, Union
+
+from dotenv import load_dotenv
 
 from .models import X402Config
 from .networks import (
@@ -19,27 +22,62 @@ _payment_required_funcs: Dict[str, Dict[str, Any]] = {}
 
 
 def init_x402(
-    pay_to: str,
-    network: Union[str, List[str]] = "base-sepolia",
-    facilitator_url: str = "https://x402.org/facilitator",
+    pay_to: Optional[str] = None,
+    network: Union[str, List[str]] = "base-sepolia", 
+    facilitator_url: Optional[str] = None,
     default_asset: str = "USDC",
     default_expires_in: int = 300,
+    load_dotenv_file: bool = True,
 ) -> None:
     """Initialize global x402 configuration.
 
     Args:
-        pay_to: Wallet address to receive payments
-        network: Blockchain network(s) to support. Can be:
+        pay_to: Wallet address to receive payments (or set PAY_TO_ADDRESS in .env)
+        network: Blockchain network(s) to support (or set X402_NETWORK in .env). Can be:
             - Single network: "base-sepolia"
             - Multiple networks: ["base", "avalanche", "iotex"]
             - "all" for all supported networks
             - "testnets" for all testnets
             - "mainnets" for all mainnets
-        facilitator_url: URL of payment facilitator
+        facilitator_url: URL of payment facilitator (or set FACILITATOR_URL in .env)
         default_asset: Default payment asset (default: USDC)
         default_expires_in: Default payment expiration in seconds
+        load_dotenv_file: Whether to load .env file (default: True)
     """
     global _config
+
+    # Load environment variables from .env file
+    if load_dotenv_file:
+        load_dotenv()
+
+    # Get configuration from environment variables if not provided
+    if pay_to is None:
+        pay_to = os.getenv("PAY_TO_ADDRESS")
+        if not pay_to:
+            raise ValueError(
+                "pay_to address is required. Set PAY_TO_ADDRESS environment variable or pass pay_to parameter."
+            )
+
+    if facilitator_url is None:
+        # Check for custom facilitator URL
+        facilitator_url = os.getenv("FACILITATOR_URL")
+        
+        # If no custom URL, determine based on available credentials
+        if facilitator_url is None:
+            cdp_key_id = os.getenv("CDP_API_KEY_ID") 
+            cdp_secret = os.getenv("CDP_API_KEY_SECRET")
+            
+            if cdp_key_id and cdp_secret:
+                # Use CDP-authenticated facilitator for mainnet
+                facilitator_url = "https://x402.org/facilitator"
+            else:
+                # Use public facilitator for testnet
+                facilitator_url = "https://x402.org/facilitator"
+
+    # Override network from environment if not provided
+    env_network = os.getenv("X402_NETWORK")
+    if env_network:
+        network = env_network
 
     # Handle special network values
     if isinstance(network, str):
@@ -203,3 +241,21 @@ def get_available_networks_for_config() -> Dict[str, Any]:
     for network_name in get_supported_networks():
         result[network_name] = get_config_for_network(network_name)
     return result
+
+
+def get_facilitator_client():
+    """Get the appropriate facilitator client based on configuration and environment."""
+    config = get_config()
+    
+    # Check if CDP credentials are available
+    cdp_key_id = os.getenv("CDP_API_KEY_ID")
+    cdp_secret = os.getenv("CDP_API_KEY_SECRET")
+    
+    if cdp_key_id and cdp_secret:
+        # Use CDP-compatible facilitator client
+        from .cdp_facilitator import CDPFacilitatorClient
+        return CDPFacilitatorClient(config.facilitator_url)
+    else:
+        # Use legacy facilitator client for backward compatibility
+        from .facilitator import FacilitatorClient
+        return FacilitatorClient(config.facilitator_url)

@@ -38,13 +38,7 @@ jobs:
       run: mypy src
     
     - name: Test with pytest
-      run: pytest --cov=fastapi_x402 --cov-report=xml
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+      run: pytest
 
   build:
     runs-on: ubuntu-latest

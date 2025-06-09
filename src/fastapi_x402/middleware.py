@@ -11,12 +11,12 @@ from starlette.routing import Match
 
 from .core import (
     get_config,
+    get_facilitator_client,
     get_payment_config,
     get_payment_config_by_name,
     requires_payment,
     requires_payment_by_name,
 )
-from .facilitator import FacilitatorClient
 from .models import PaymentRequirements
 
 
@@ -32,14 +32,13 @@ class PaymentMiddleware(BaseHTTPMiddleware):
         """
         super().__init__(app)
         self.auto_settle = auto_settle
-        self._facilitator_client: Optional[FacilitatorClient] = None
+        self._facilitator_client = None
 
     @property
-    def facilitator_client(self) -> FacilitatorClient:
+    def facilitator_client(self):
         """Get or create facilitator client."""
         if self._facilitator_client is None:
-            config = get_config()
-            self._facilitator_client = FacilitatorClient(config.facilitator_url)
+            self._facilitator_client = get_facilitator_client()
         return self._facilitator_client
 
     async def dispatch(self, request: Request, call_next: Callable) -> Any:

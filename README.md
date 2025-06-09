@@ -37,43 +37,59 @@ pip install fastapi-x402
 
 ## 🎯 Quick Start
 
-### 1. Basic Setup
+### 1. Environment Setup
+
+Create a `.env` file in your project root:
+
+```bash
+# Required: Your merchant wallet address  
+PAY_TO_ADDRESS=0x1234567890123456789012345678901234567890
+
+# For testnet development (default)
+# Uses public x402.org facilitator - no additional setup needed
+
+# For mainnet production (requires Coinbase CDP)
+# CDP_API_KEY_ID=your_cdp_api_key_id
+# CDP_API_KEY_SECRET=your_cdp_api_secret
+```
+
+### 2. Basic FastAPI Integration
 
 ```python
 from fastapi import FastAPI
 from fastapi_x402 import init_x402, pay
+from fastapi_x402.middleware import PaymentMiddleware
 
 app = FastAPI()
 
-# Initialize x402 with your merchant wallet and facilitator
-init_x402(
-    app,
-    merchant_wallet="0x9ecae3f1abfce10971353FD21bD8B4785473fD18",
-    facilitator_url="https://x402.org/facilitator"  # or your own facilitator
-)
+# Initialize x402 (loads from .env automatically)
+init_x402(network="base-sepolia")  # or "base" for mainnet
 
-@app.get("/free-endpoint")
+# Add payment middleware
+app.add_middleware(PaymentMiddleware)
+
+@app.get("/free")
 async def free_endpoint():
     return {"message": "This endpoint is free!"}
 
-@app.get("/paid-endpoint")
+@app.get("/premium")
 @pay("$0.01")  # Require 1 cent payment
-async def paid_endpoint():
-    return {"secret": "This cost 1 cent to access!"}
+async def premium_endpoint():
+    return {"data": "This cost 1 cent to access!"}
 
-@app.get("/expensive-data")
-@pay("$1.00")  # Require $1 payment
-async def expensive_data():
+@app.get("/expensive")
+@pay("$1.00")  # Require $1 payment  
+async def expensive_endpoint():
     return {"premium_data": "This is worth $1!"}
 ```
 
-### 2. Run Your Server
+### 3. Run Your Server
 
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### 3. Test the Payment Flow
+### 4. Test the Payment Flow
 
 **Without payment (gets 402 response):**
 ```bash
@@ -111,12 +127,48 @@ response = await client.get('http://localhost:8000/paid-endpoint')
 
 ## 🔧 Configuration
 
-### Environment Variables
+### Environment Variables (.env file)
+
 ```bash
-# Optional: Override default settings
-X402_FACILITATOR_URL=https://your-facilitator.com
+# Required
+PAY_TO_ADDRESS=0x1234567890123456789012345678901234567890
+
+# Optional: Network configuration
+X402_NETWORK=base-sepolia                    # Single network
+# X402_NETWORK=base,avalanche,iotex          # Multiple networks  
+# X402_NETWORK=mainnets                      # All mainnets
+# X402_NETWORK=testnets                      # All testnets
+
+# Optional: Custom facilitator (advanced)
+# FACILITATOR_URL=https://your-facilitator.com
+
+# Required for mainnet production
+# CDP_API_KEY_ID=your_coinbase_cdp_api_key_id
+# CDP_API_KEY_SECRET=your_coinbase_cdp_api_secret
+```
+
+### Testnet vs Mainnet Setup
+
+**🧪 Testnet Development (Default)**
+```python
+# .env
+PAY_TO_ADDRESS=0x...
 X402_NETWORK=base-sepolia
-X402_ASSET_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+
+# main.py
+init_x402()  # Uses public facilitator, no API keys needed
+```
+
+**🚀 Mainnet Production**
+```python
+# .env  
+PAY_TO_ADDRESS=0x...
+X402_NETWORK=base                 # or avalanche, iotex
+CDP_API_KEY_ID=your_key_id
+CDP_API_KEY_SECRET=your_secret
+
+# main.py
+init_x402()  # Auto-detects CDP credentials for mainnet
 ```
 
 ### Multi-Network Configuration
@@ -124,27 +176,23 @@ X402_ASSET_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
 from fastapi_x402 import init_x402
 
 # Support all available networks
-init_x402(
-    pay_to="0x...",
-    network="all"  # Accepts payments on Base, Avalanche, and IoTeX
-)
+init_x402(network="all")  # Accepts payments on Base, Avalanche, and IoTeX
 
 # Support specific networks
-init_x402(
-    pay_to="0x...",
-    network=["base", "avalanche"]  # Only Base and Avalanche
-)
+init_x402(network=["base", "avalanche"])  # Multiple networks
 
-# Support only testnets
-init_x402(
-    pay_to="0x...",
-    network="testnets"  # base-sepolia and avalanche-fuji
-)
+# Network shortcuts
+init_x402(network="testnets")   # Base Sepolia + Avalanche Fuji
+init_x402(network="mainnets")   # Base + Avalanche + IoTeX mainnet
+```
 
-# Support only mainnets
+### Manual Configuration (No .env)
+```python
+# Direct parameter passing (overrides .env)
 init_x402(
     pay_to="0x...",
-    network="mainnets"  # base, avalanche, and iotex
+    network="base-sepolia", 
+    facilitator_url="https://x402.org/facilitator"
 )
 ```
 
@@ -258,6 +306,37 @@ All networks support USDC with automatic configuration:
 - **Avalanche Mainnet**: `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E`
 - **IoTeX**: `0xcdf79194c6c285077a58da47641d4dbe51f63542`
 
+## 🔑 Coinbase CDP Setup (Mainnet)
+
+To accept payments on mainnet networks, you need Coinbase Developer Platform (CDP) credentials:
+
+### 1. Create CDP Account
+1. Go to [Coinbase Developer Platform](https://www.coinbase.com/cloud)
+2. Sign up for a CDP account
+3. Navigate to API Keys section
+
+### 2. Generate API Keys
+1. Create a new API key pair
+2. Download and securely store your credentials
+3. Note your `API Key ID` and `API Secret`
+
+### 3. Add to Environment
+```bash
+# .env
+PAY_TO_ADDRESS=0x...
+CDP_API_KEY_ID=your_api_key_id_here
+CDP_API_KEY_SECRET=your_api_secret_here
+X402_NETWORK=base  # or avalanche, iotex
+```
+
+### 4. Initialize for Mainnet
+```python
+# Automatically detects CDP credentials and enables mainnet
+init_x402(network="mainnets")  # Supports Base, Avalanche, IoTeX
+```
+
+**Why CDP?** Mainnet payment settlement requires authenticated access to blockchain infrastructure. CDP provides reliable, scalable blockchain access with the security needed for production applications.
+
 ## 🧪 Testing
 
 ### Run Tests
@@ -294,7 +373,7 @@ pytest --cov=fastapi_x402
 
 ### Development Setup
 ```bash
-git clone https://github.com/fastapi-x402/fastapi-x402.git
+git clone https://github.com/jordo1138/fastapi-x402.git
 cd fastapi-x402
 pip install -e .[dev]
 pre-commit install
@@ -310,9 +389,8 @@ Check out the `/examples` directory for:
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/fastapi-x402/fastapi-x402/issues)
-- **Documentation**: [docs.fastapi-x402.dev](https://docs.fastapi-x402.dev)
-- **Discord**: [x402 Community](https://discord.gg/x402)
+- **Issues**: [GitHub Issues](https://github.com/jordo1138/fastapi-x402/issues)
+- **Documentation**: [x402 protocol docs](https://x402.org)
 
 ## 📄 License
 

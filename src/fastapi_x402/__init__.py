@@ -3,6 +3,7 @@
 from .core import (
     get_available_networks_for_config,
     get_config_for_network,
+    get_facilitator_client,
     get_supported_networks_list,
     init_x402,
     pay,
@@ -27,6 +28,7 @@ __all__ = [
     "pay",
     "PaymentMiddleware",
     "payment_required",
+    "get_facilitator_client",
     # Network information
     "get_supported_networks_list",
     "get_config_for_network",
