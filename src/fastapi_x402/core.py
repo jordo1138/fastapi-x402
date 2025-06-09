@@ -3,8 +3,13 @@
 import functools
 import os
 from typing import Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING
 
-from dotenv import load_dotenv
+if TYPE_CHECKING:
+    from .facilitator import FacilitatorClient
+    from .cdp_facilitator import CDPFacilitatorClient
+
+from dotenv import load_dotenv  # type: ignore[import-not-found]
 
 from .models import X402Config
 from .networks import (
@@ -243,7 +248,7 @@ def get_available_networks_for_config() -> Dict[str, Any]:
     return result
 
 
-def get_facilitator_client():
+def get_facilitator_client() -> Union["FacilitatorClient", "CDPFacilitatorClient"]:
     """Get the appropriate facilitator client based on configuration and environment."""
     config = get_config()
 

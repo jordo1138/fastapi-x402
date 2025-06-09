@@ -32,8 +32,8 @@ class CDPFacilitatorClient:
         )
 
         # Check for CDP credentials
-        self.cdp_key_id = os.getenv("CDP_API_KEY_ID")
-        self.cdp_secret = os.getenv("CDP_API_KEY_SECRET")
+        self.cdp_key_id: Optional[str] = os.getenv("CDP_API_KEY_ID")
+        self.cdp_secret: Optional[str] = os.getenv("CDP_API_KEY_SECRET")
         self.has_cdp_auth = bool(self.cdp_key_id and self.cdp_secret)
 
     def _get_headers(self) -> Dict[str, str]:
@@ -44,7 +44,7 @@ class CDPFacilitatorClient:
             "user-agent": "fastapi-x402-python",
         }
 
-        if self.has_cdp_auth:
+        if self.has_cdp_auth and self.cdp_key_id and self.cdp_secret:
             # Add CDP authentication headers
             # Note: This is a placeholder - actual CDP auth might use JWT or other methods
             headers["X-CDP-API-KEY-ID"] = self.cdp_key_id

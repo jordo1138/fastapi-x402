@@ -1,6 +1,11 @@
 """Payment dependencies for FastAPI x402."""
 
-from typing import Optional
+from typing import Optional, Union
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .facilitator import FacilitatorClient
+    from .cdp_facilitator import CDPFacilitatorClient
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -19,10 +24,12 @@ class PaymentDependency:
 
     def __init__(self, auto_settle: bool = True):
         self.auto_settle = auto_settle
-        self._facilitator_client = None
+        self._facilitator_client: Optional[
+            Union["FacilitatorClient", "CDPFacilitatorClient"]
+        ] = None
 
     @property
-    def facilitator_client(self):
+    def facilitator_client(self) -> Union["FacilitatorClient", "CDPFacilitatorClient"]:
         """Get or create facilitator client."""
         if self._facilitator_client is None:
             self._facilitator_client = get_facilitator_client()

@@ -2,7 +2,12 @@
 
 import base64
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .facilitator import FacilitatorClient
+    from .cdp_facilitator import CDPFacilitatorClient
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -32,10 +37,12 @@ class PaymentMiddleware(BaseHTTPMiddleware):
         """
         super().__init__(app)
         self.auto_settle = auto_settle
-        self._facilitator_client = None
+        self._facilitator_client: Optional[
+            Union["FacilitatorClient", "CDPFacilitatorClient"]
+        ] = None
 
     @property
-    def facilitator_client(self):
+    def facilitator_client(self) -> Union["FacilitatorClient", "CDPFacilitatorClient"]:
         """Get or create facilitator client."""
         if self._facilitator_client is None:
             self._facilitator_client = get_facilitator_client()
@@ -139,10 +146,21 @@ class PaymentMiddleware(BaseHTTPMiddleware):
             # Only settle if the response was successful (status < 400) and auto_settle is enabled
             if response.status_code < 400 and self.auto_settle:
                 print("DEBUG: Route successful, proceeding with settlement...")
-                settle_response = await self.facilitator_client.settle_payment_object(
-                    decoded_payment=request.state.decoded_payment,
-                    payment_requirements=request.state.payment_requirements,
-                )
+                # Use the appropriate settle method based on client type
+                if hasattr(self.facilitator_client, "settle_payment_object"):
+                    # Legacy FacilitatorClient
+                    settle_response = (
+                        await self.facilitator_client.settle_payment_object(
+                            decoded_payment=request.state.decoded_payment,
+                            payment_requirements=request.state.payment_requirements,
+                        )
+                    )
+                else:
+                    # CDP FacilitatorClient - uses raw header
+                    settle_response = await self.facilitator_client.settle_payment(
+                        payment_header=payment_header,
+                        payment_requirements=request.state.payment_requirements,
+                    )
 
                 if settle_response.tx_status == "SETTLED":
                     # Payment was settled successfully - match CDP format exactly
