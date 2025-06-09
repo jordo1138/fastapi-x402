@@ -26,16 +26,19 @@ _payment_required_funcs: Dict[str, Dict[str, Any]] = {}
 
 
 def init_x402(
+    app: Optional[Any] = None,
     pay_to: Optional[str] = None,
     network: Union[str, List[str]] = "base-sepolia",
     facilitator_url: Optional[str] = None,
     default_asset: str = "USDC",
     default_expires_in: int = 300,
     load_dotenv_file: bool = True,
+    auto_add_middleware: bool = True,
 ) -> None:
-    """Initialize global x402 configuration.
+    """Initialize global x402 configuration and optionally add middleware.
 
     Args:
+        app: FastAPI app instance (if provided, automatically adds PaymentMiddleware)
         pay_to: Wallet address to receive payments (or set PAY_TO_ADDRESS in .env)
         network: Blockchain network(s) to support (or set X402_NETWORK in .env). Can be:
             - Single network: "base-sepolia"
@@ -47,6 +50,7 @@ def init_x402(
         default_asset: Default payment asset (default: USDC)
         default_expires_in: Default payment expiration in seconds
         load_dotenv_file: Whether to load .env file (default: True)
+        auto_add_middleware: Whether to automatically add PaymentMiddleware when app is provided (default: True)
     """
     global _config
 
@@ -112,6 +116,12 @@ def init_x402(
         default_asset=default_asset,
         default_expires_in=default_expires_in,
     )
+
+    # Automatically add PaymentMiddleware if app is provided
+    if app is not None and auto_add_middleware:
+        from .middleware import PaymentMiddleware
+
+        app.add_middleware(PaymentMiddleware)
 
 
 def get_config() -> X402Config:

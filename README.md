@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi_x402 import init_x402, pay
 
 app = FastAPI()
-init_x402(app, merchant_wallet="0x...", facilitator_url="https://x402.org/facilitator")
+init_x402(app, pay_to="0x...", facilitator_url="https://x402.org/facilitator")
 
 @app.get("/premium-data")
 @pay("$0.01")  # Require 1 cent payment
@@ -58,15 +58,11 @@ PAY_TO_ADDRESS=0x1234567890123456789012345678901234567890
 ```python
 from fastapi import FastAPI
 from fastapi_x402 import init_x402, pay
-from fastapi_x402.middleware import PaymentMiddleware
 
 app = FastAPI()
 
-# Initialize x402 (loads from .env automatically)
-init_x402(network="base-sepolia")  # or "base" for mainnet
-
-# Add payment middleware
-app.add_middleware(PaymentMiddleware)
+# Initialize x402 (loads from .env and adds middleware automatically)
+init_x402(app, network="base-sepolia")  # or "base" for mainnet
 
 @app.get("/free")
 async def free_endpoint():
@@ -156,7 +152,7 @@ PAY_TO_ADDRESS=0x...
 X402_NETWORK=base-sepolia
 
 # main.py
-init_x402()  # Uses public facilitator, no API keys needed
+init_x402(app)  # Uses public facilitator, no API keys needed
 ```
 
 **🚀 Mainnet Production**
@@ -168,7 +164,7 @@ CDP_API_KEY_ID=your_key_id
 CDP_API_KEY_SECRET=your_secret
 
 # main.py
-init_x402()  # Auto-detects CDP credentials for mainnet
+init_x402(app)  # Auto-detects CDP credentials for mainnet
 ```
 
 ### Multi-Network Configuration
@@ -176,20 +172,21 @@ init_x402()  # Auto-detects CDP credentials for mainnet
 from fastapi_x402 import init_x402
 
 # Support all available networks
-init_x402(network="all")  # Accepts payments on Base, Avalanche, and IoTeX
+init_x402(app, network="all")  # Accepts payments on Base, Avalanche, and IoTeX
 
 # Support specific networks
-init_x402(network=["base", "avalanche"])  # Multiple networks
+init_x402(app, network=["base", "avalanche"])  # Multiple networks
 
 # Network shortcuts
-init_x402(network="testnets")   # Base Sepolia + Avalanche Fuji
-init_x402(network="mainnets")   # Base + Avalanche + IoTeX mainnet
+init_x402(app, network="testnets")   # Base Sepolia + Avalanche Fuji
+init_x402(app, network="mainnets")   # Base + Avalanche + IoTeX mainnet
 ```
 
 ### Manual Configuration (No .env)
 ```python
 # Direct parameter passing (overrides .env)
 init_x402(
+    app,
     pay_to="0x...",
     network="base-sepolia", 
     facilitator_url="https://x402.org/facilitator"
@@ -216,7 +213,7 @@ Your API can control which networks clients can use to pay:
 ### 1. **Single Network (Server Dictates)**
 ```python
 # Only accept Base network payments
-init_x402(pay_to="0x...", network="base")
+init_x402(app, pay_to="0x...", network="base")
 
 @pay("$0.01")
 @app.get("/base-only")
@@ -231,7 +228,7 @@ def base_only():
 ### 2. **Multiple Options (Client Chooses)**
 ```python
 # Accept payments from multiple networks
-init_x402(pay_to="0x...", network=["base", "avalanche", "iotex"])
+init_x402(app, pay_to="0x...", network=["base", "avalanche", "iotex"])
 
 @pay("$0.01")  
 @app.get("/multi-choice")
@@ -332,7 +329,7 @@ X402_NETWORK=base  # or avalanche, iotex
 ### 4. Initialize for Mainnet
 ```python
 # Automatically detects CDP credentials and enables mainnet
-init_x402(network="mainnets")  # Supports Base, Avalanche, IoTeX
+init_x402(app, network="mainnets")  # Supports Base, Avalanche, IoTeX
 ```
 
 **Why CDP?** Mainnet payment settlement requires authenticated access to blockchain infrastructure. CDP provides reliable, scalable blockchain access with the security needed for production applications.
