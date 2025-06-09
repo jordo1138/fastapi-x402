@@ -2,8 +2,7 @@
 
 import base64
 import json
-from typing import Any, Callable, Optional, Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 if TYPE_CHECKING:
     from .facilitator import FacilitatorClient

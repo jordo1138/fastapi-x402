@@ -2,8 +2,7 @@
 
 import functools
 import os
-from typing import Any, Callable, Dict, List, Optional, Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from .facilitator import FacilitatorClient

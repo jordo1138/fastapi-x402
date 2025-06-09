@@ -1,7 +1,6 @@
 """Payment dependencies for FastAPI x402."""
 
-from typing import Optional, Union
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from .facilitator import FacilitatorClient
