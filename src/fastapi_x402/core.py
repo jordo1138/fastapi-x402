@@ -23,7 +23,7 @@ _payment_required_funcs: Dict[str, Dict[str, Any]] = {}
 
 def init_x402(
     pay_to: Optional[str] = None,
-    network: Union[str, List[str]] = "base-sepolia", 
+    network: Union[str, List[str]] = "base-sepolia",
     facilitator_url: Optional[str] = None,
     default_asset: str = "USDC",
     default_expires_in: int = 300,
@@ -61,12 +61,12 @@ def init_x402(
     if facilitator_url is None:
         # Check for custom facilitator URL
         facilitator_url = os.getenv("FACILITATOR_URL")
-        
+
         # If no custom URL, determine based on available credentials
         if facilitator_url is None:
-            cdp_key_id = os.getenv("CDP_API_KEY_ID") 
+            cdp_key_id = os.getenv("CDP_API_KEY_ID")
             cdp_secret = os.getenv("CDP_API_KEY_SECRET")
-            
+
             if cdp_key_id and cdp_secret:
                 # Use CDP-authenticated facilitator for mainnet
                 facilitator_url = "https://x402.org/facilitator"
@@ -246,16 +246,18 @@ def get_available_networks_for_config() -> Dict[str, Any]:
 def get_facilitator_client():
     """Get the appropriate facilitator client based on configuration and environment."""
     config = get_config()
-    
+
     # Check if CDP credentials are available
     cdp_key_id = os.getenv("CDP_API_KEY_ID")
     cdp_secret = os.getenv("CDP_API_KEY_SECRET")
-    
+
     if cdp_key_id and cdp_secret:
         # Use CDP-compatible facilitator client
         from .cdp_facilitator import CDPFacilitatorClient
+
         return CDPFacilitatorClient(config.facilitator_url)
     else:
         # Use legacy facilitator client for backward compatibility
         from .facilitator import FacilitatorClient
+
         return FacilitatorClient(config.facilitator_url)

@@ -5,7 +5,12 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from .core import get_config, get_facilitator_client, get_payment_config, requires_payment
+from .core import (
+    get_config,
+    get_facilitator_client,
+    get_payment_config,
+    requires_payment,
+)
 from .models import PaymentRequirements
 
 

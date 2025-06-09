@@ -13,7 +13,7 @@ from .models import PaymentRequirements, SettleResponse, VerifyResponse
 class CDPFacilitatorClient:
     """
     Facilitator client compatible with Coinbase CDP authentication.
-    
+
     Uses the cleaner API format from Coinbase's x402 implementation:
     - Sends raw payment header (not decoded)
     - Uses 'paymentHeader' and 'paymentRequirements' fields
@@ -25,7 +25,7 @@ class CDPFacilitatorClient:
             self.url = url.rstrip("/")
         else:
             raise ValueError(f"Invalid URL {url}, must start with http:// or https://")
-        
+
         self.client = httpx.AsyncClient(
             timeout=30.0,
             follow_redirects=True,
@@ -57,11 +57,11 @@ class CDPFacilitatorClient:
     ) -> VerifyResponse:
         """
         Verify a payment header using the simplified Coinbase API format.
-        
+
         Args:
             payment_header: Raw X-PAYMENT header value from client
             payment_requirements: Payment requirements for this request
-            
+
         Returns:
             VerifyResponse with verification result
         """
@@ -97,11 +97,11 @@ class CDPFacilitatorClient:
     ) -> SettleResponse:
         """
         Settle a payment using the simplified Coinbase API format.
-        
+
         Args:
             payment_header: Raw X-PAYMENT header value from client
             payment_requirements: Payment requirements for this request
-            
+
         Returns:
             SettleResponse with settlement result
         """
@@ -128,10 +128,12 @@ class CDPFacilitatorClient:
             else:
                 try:
                     error_data = response.json()
-                    error_reason = error_data.get("errorReason", f"HTTP {response.status_code}")
+                    error_reason = error_data.get(
+                        "errorReason", f"HTTP {response.status_code}"
+                    )
                 except:
                     error_reason = f"HTTP {response.status_code}: {response.text}"
-                
+
                 return SettleResponse(
                     success=False,
                     errorReason=error_reason,
@@ -148,17 +150,20 @@ class CDPFacilitatorClient:
     ) -> Tuple[VerifyResponse, SettleResponse]:
         """Verify and immediately settle payment in one call."""
         # First verify
-        verify_response = await self.verify_payment(payment_header, payment_requirements)
-        
+        verify_response = await self.verify_payment(
+            payment_header, payment_requirements
+        )
+
         if not verify_response.isValid:
             failed_settle = SettleResponse(
-                success=False, 
-                errorReason="Verification failed"
+                success=False, errorReason="Verification failed"
             )
             return verify_response, failed_settle
 
         # Then settle
-        settle_response = await self.settle_payment(payment_header, payment_requirements)
+        settle_response = await self.settle_payment(
+            payment_header, payment_requirements
+        )
         return verify_response, settle_response
 
     async def close(self) -> None:
