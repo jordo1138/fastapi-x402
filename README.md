@@ -317,6 +317,12 @@ To accept payments on mainnet networks, you need Coinbase Developer Platform (CD
 2. Download and securely store your credentials
 3. Note your `API Key ID` and `API Secret`
 
+# For mainnet production (requires Coinbase CDP)
+# CDP_API_KEY_ID=[REDACTED:api-key]
+# CDP_API_KEY_SECRET=[REDACTED:api-key]
+
+> **Note**: Based on the official Coinbase x402 Python implementation, facilitator requests use simple HTTP without authentication headers. CDP credentials may be stored for future use but are not currently required for facilitator API calls.
+
 ### 3. Add to Environment
 ```bash
 # .env
@@ -333,6 +339,8 @@ init_x402(app, network="mainnets")  # Supports Base, Avalanche, IoTeX
 ```
 
 **Why CDP?** Mainnet payment settlement requires authenticated access to blockchain infrastructure. CDP provides reliable, scalable blockchain access with the security needed for production applications.
+
+**Note**: Based on the official Coinbase x402 Python implementation, facilitator requests currently use simple HTTP without authentication headers. CDP credentials may be stored for future use but are not currently required for facilitator API calls.
 
 ## 🧪 Testing
 

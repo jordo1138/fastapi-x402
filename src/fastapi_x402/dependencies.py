@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     from .facilitator import FacilitatorClient
-    from .cdp_facilitator import CDPFacilitatorClient
+    from .coinbase_facilitator import CoinbaseFacilitatorClient
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -24,11 +24,13 @@ class PaymentDependency:
     def __init__(self, auto_settle: bool = True):
         self.auto_settle = auto_settle
         self._facilitator_client: Optional[
-            Union["FacilitatorClient", "CDPFacilitatorClient"]
+            Union["FacilitatorClient", "CoinbaseFacilitatorClient"]
         ] = None
 
     @property
-    def facilitator_client(self) -> Union["FacilitatorClient", "CDPFacilitatorClient"]:
+    def facilitator_client(
+        self,
+    ) -> Union["FacilitatorClient", "CoinbaseFacilitatorClient"]:
         """Get or create facilitator client."""
         if self._facilitator_client is None:
             self._facilitator_client = get_facilitator_client()

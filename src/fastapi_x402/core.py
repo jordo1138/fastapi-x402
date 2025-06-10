@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from .facilitator import FacilitatorClient
-    from .cdp_facilitator import CDPFacilitatorClient
+    from .coinbase_facilitator import CoinbaseFacilitatorClient
 
 from dotenv import load_dotenv  # type: ignore[import-not-found]
 
@@ -76,8 +76,8 @@ def init_x402(
             cdp_secret = os.getenv("CDP_API_KEY_SECRET")
 
             if cdp_key_id and cdp_secret:
-                # Use CDP-authenticated facilitator for mainnet
-                facilitator_url = "https://x402.org/facilitator"
+                # Use official Coinbase facilitator for mainnet
+                facilitator_url = "https://api.cdp.coinbase.com/platform/v2/x402"
             else:
                 # Use public facilitator for testnet
                 facilitator_url = "https://x402.org/facilitator"
@@ -257,7 +257,7 @@ def get_available_networks_for_config() -> Dict[str, Any]:
     return result
 
 
-def get_facilitator_client() -> Union["FacilitatorClient", "CDPFacilitatorClient"]:
+def get_facilitator_client() -> Union["FacilitatorClient", "CoinbaseFacilitatorClient"]:
     """Get the appropriate facilitator client based on configuration and environment."""
     config = get_config()
 
@@ -266,12 +266,12 @@ def get_facilitator_client() -> Union["FacilitatorClient", "CDPFacilitatorClient
     cdp_secret = os.getenv("CDP_API_KEY_SECRET")
 
     if cdp_key_id and cdp_secret:
-        # Use CDP-compatible facilitator client
-        from .cdp_facilitator import CDPFacilitatorClient
+        # Use official Coinbase facilitator client with JWT auth
+        from .coinbase_facilitator import CoinbaseFacilitatorClient
 
-        return CDPFacilitatorClient(config.facilitator_url)
+        return CoinbaseFacilitatorClient(cdp_key_id, cdp_secret)
     else:
-        # Use legacy facilitator client for backward compatibility
+        # Use legacy facilitator client for testnet
         from .facilitator import FacilitatorClient
 
         return FacilitatorClient(config.facilitator_url)
