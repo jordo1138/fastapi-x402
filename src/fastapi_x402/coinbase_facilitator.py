@@ -123,7 +123,9 @@ class CoinbaseFacilitatorClient:
         }
 
         try:
-            token: str = jwt.encode(claims, private_key_obj, algorithm=alg, headers=header)
+            token: str = jwt.encode(
+                claims, private_key_obj, algorithm=alg, headers=header
+            )
             return token
         except Exception as e:
             raise InvalidAPIKeyFormatError(f"Could not sign the JWT: {e}")
