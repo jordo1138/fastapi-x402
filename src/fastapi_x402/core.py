@@ -1,12 +1,12 @@
 """Core functionality for FastAPI x402."""
 
+import asyncio
 import functools
 import os
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
-    from .facilitator import FacilitatorClient
-    from .coinbase_facilitator import CoinbaseFacilitatorClient
+    from .facilitator import UnifiedFacilitatorClient
 
 from dotenv import load_dotenv  # type: ignore[import-not-found]
 
@@ -170,8 +170,21 @@ def pay(
         }
 
         @functools.wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
+            if asyncio.iscoroutinefunction(func):
+                return await func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
+
+        @functools.wraps(func)
+        def sync_wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
+
+        # Use the appropriate wrapper based on whether the function is async
+        if asyncio.iscoroutinefunction(func):
+            wrapper = async_wrapper
+        else:
+            wrapper = sync_wrapper
 
         # Mark the function as requiring payment
         wrapper._x402_payment_required = True  # type: ignore[attr-defined]
@@ -257,21 +270,36 @@ def get_available_networks_for_config() -> Dict[str, Any]:
     return result
 
 
-def get_facilitator_client() -> Union["FacilitatorClient", "CoinbaseFacilitatorClient"]:
-    """Get the appropriate facilitator client based on configuration and environment."""
+def get_facilitator_client() -> "UnifiedFacilitatorClient":
+    """Get the unified facilitator client - auto-detects based on network and credentials."""
     config = get_config()
 
-    # Check if CDP credentials are available
+    # Get CDP credentials from environment
     cdp_key_id = os.getenv("CDP_API_KEY_ID")
     cdp_secret = os.getenv("CDP_API_KEY_SECRET")
 
-    if cdp_key_id and cdp_secret:
-        # Use official Coinbase facilitator client with JWT auth
-        from .coinbase_facilitator import CoinbaseFacilitatorClient
+    # Auto-detect facilitator based on network and credentials
+    facilitator_url = config.facilitator_url
+    if not facilitator_url:
+        # Check if the default network is a testnet
+        # Get the first network if multiple networks are configured
+        network = config.network if isinstance(config.network, str) else config.network[0]
+        network_config = get_network_config(network)
 
-        return CoinbaseFacilitatorClient(cdp_key_id, cdp_secret)
-    else:
-        # Use legacy facilitator client for testnet
-        from .facilitator import FacilitatorClient
+        if network_config and network_config.is_testnet:
+            # Testnet -> always use x402.org gasless facilitator
+            facilitator_url = "https://x402.org/facilitator"
+        elif cdp_key_id and cdp_secret:
+            # Mainnet with CDP credentials -> use official Coinbase facilitator
+            facilitator_url = "https://api.cdp.coinbase.com"
+        else:
+            # Mainnet without CDP credentials -> fallback to x402.org
+            facilitator_url = "https://x402.org/facilitator"
 
-        return FacilitatorClient(config.facilitator_url)
+    from .facilitator import UnifiedFacilitatorClient
+
+    return UnifiedFacilitatorClient(
+        base_url=facilitator_url,
+        cdp_api_key_id=cdp_key_id,
+        cdp_api_key_secret=cdp_secret,
+    )

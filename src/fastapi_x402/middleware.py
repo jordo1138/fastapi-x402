@@ -2,11 +2,10 @@
 
 import base64
 import json
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 if TYPE_CHECKING:
-    from .facilitator import FacilitatorClient
-    from .coinbase_facilitator import CoinbaseFacilitatorClient
+    from .facilitator import UnifiedFacilitatorClient
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
@@ -36,14 +35,10 @@ class PaymentMiddleware(BaseHTTPMiddleware):
         """
         super().__init__(app)
         self.auto_settle = auto_settle
-        self._facilitator_client: Optional[
-            Union["FacilitatorClient", "CoinbaseFacilitatorClient"]
-        ] = None
+        self._facilitator_client: Optional["UnifiedFacilitatorClient"] = None
 
     @property
-    def facilitator_client(
-        self,
-    ) -> Union["FacilitatorClient", "CoinbaseFacilitatorClient"]:
+    def facilitator_client(self) -> "UnifiedFacilitatorClient":
         """Get or create facilitator client."""
         if self._facilitator_client is None:
             self._facilitator_client = get_facilitator_client()
@@ -321,5 +316,8 @@ class PaymentMiddleware(BaseHTTPMiddleware):
             or config.default_expires_in
             or 300,
             asset=asset_config.address,
-            extra={"name": asset_config.name, "version": asset_config.eip712_version},
+            extra={
+                "name": asset_config.eip712_name,
+                "version": asset_config.eip712_version,
+            },
         )

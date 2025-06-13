@@ -143,3 +143,6 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Backup demos and test files
+backup_demos_and_tests/

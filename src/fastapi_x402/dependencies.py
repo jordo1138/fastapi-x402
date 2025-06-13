@@ -1,10 +1,9 @@
 """Payment dependencies for FastAPI x402."""
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from .facilitator import FacilitatorClient
-    from .coinbase_facilitator import CoinbaseFacilitatorClient
+    from .facilitator import UnifiedFacilitatorClient
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -23,14 +22,10 @@ class PaymentDependency:
 
     def __init__(self, auto_settle: bool = True):
         self.auto_settle = auto_settle
-        self._facilitator_client: Optional[
-            Union["FacilitatorClient", "CoinbaseFacilitatorClient"]
-        ] = None
+        self._facilitator_client: Optional["UnifiedFacilitatorClient"] = None
 
     @property
-    def facilitator_client(
-        self,
-    ) -> Union["FacilitatorClient", "CoinbaseFacilitatorClient"]:
+    def facilitator_client(self) -> "UnifiedFacilitatorClient":
         """Get or create facilitator client."""
         if self._facilitator_client is None:
             self._facilitator_client = get_facilitator_client()
@@ -143,13 +138,23 @@ class PaymentDependency:
         else:
             atomic_amount = str(int(float(price_str) * 1_000_000))
 
-        # USDC contract address on Base Sepolia
-        usdc_address = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
-
         # Use the first network if config.network is a list
         network = (
             config.network if isinstance(config.network, str) else config.network[0]
         )
+
+        # USDC contract address based on network
+        if network == "base":
+            usdc_address = (
+                "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # USDC on Base mainnet
+            )
+        elif network == "base-sepolia":
+            usdc_address = (
+                "0x036CbD53842c5426634e7929541eC2318f3dCF7e"  # USDC on Base Sepolia
+            )
+        else:
+            # Default to Base mainnet USDC for other networks
+            usdc_address = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 
         return PaymentRequirements(
             scheme="exact",
