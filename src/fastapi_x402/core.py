@@ -283,7 +283,9 @@ def get_facilitator_client() -> "UnifiedFacilitatorClient":
     if not facilitator_url:
         # Check if the default network is a testnet
         # Get the first network if multiple networks are configured
-        network = config.network if isinstance(config.network, str) else config.network[0]
+        network = (
+            config.network if isinstance(config.network, str) else config.network[0]
+        )
         network_config = get_network_config(network)
 
         if network_config and network_config.is_testnet:
