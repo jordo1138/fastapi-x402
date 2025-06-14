@@ -70,17 +70,8 @@ def init_x402(
         # Check for custom facilitator URL
         facilitator_url = os.getenv("FACILITATOR_URL")
 
-        # If no custom URL, determine based on available credentials
-        if facilitator_url is None:
-            cdp_key_id = os.getenv("CDP_API_KEY_ID")
-            cdp_secret = os.getenv("CDP_API_KEY_SECRET")
-
-            if cdp_key_id and cdp_secret:
-                # Use official Coinbase facilitator for mainnet
-                facilitator_url = "https://api.cdp.coinbase.com/platform/v2/x402"
-            else:
-                # Use public facilitator for testnet
-                facilitator_url = "https://x402.org/facilitator"
+        # Leave facilitator_url as None if not explicitly set
+        # The get_facilitator_client() function will auto-detect based on network type
 
     # Override network from environment if not provided
     env_network = os.getenv("X402_NETWORK")

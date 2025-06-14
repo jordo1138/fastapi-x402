@@ -81,8 +81,8 @@ class UnifiedFacilitatorClient:
 
         # Set up endpoints
         if self.is_coinbase_cdp:
-            self.verify_url = f"{self.base_url}/platform/v2/x402/verify"
-            self.settle_url = f"{self.base_url}/platform/v2/x402/settle"
+            self.verify_url = f"{self.base_url}/verify"
+            self.settle_url = f"{self.base_url}/settle"
         else:
             self.verify_url = f"{self.base_url}/verify"
             self.settle_url = f"{self.base_url}/settle"
@@ -150,11 +150,21 @@ class UnifiedFacilitatorClient:
             headers = self._create_coinbase_headers("verify")
 
             # Make request
+            print(f"🔍 FACILITATOR DEBUG:")
+            print(f"🔍 URL: {self.verify_url}")
+            print(f"🔍 Method: POST")
+            print(f"🔍 Headers: {headers}")
+            print(f"🔍 Payload: {payload}")
+            
             response = await self.client.post(
                 self.verify_url,
                 json=payload,
                 headers=headers,
             )
+            
+            print(f"🔍 Response Status: {response.status_code}")
+            print(f"🔍 Response Headers: {dict(response.headers)}")
+            print(f"🔍 Response Body: {response.text}")
 
             if response.status_code == 200:
                 data = response.json()
