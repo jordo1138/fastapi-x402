@@ -74,6 +74,6 @@ class X402Config(BaseModel):
     network: Union[str, List[str]] = (
         "base-sepolia"  # Support single or multiple networks
     )
-    facilitator_url: str = "https://x402.org/facilitator"
+    facilitator_url: Optional[str] = None
     default_asset: str = "USDC"
     default_expires_in: int = 300

@@ -155,13 +155,13 @@ class UnifiedFacilitatorClient:
             print(f"🔍 Method: POST")
             print(f"🔍 Headers: {headers}")
             print(f"🔍 Payload: {payload}")
-            
+
             response = await self.client.post(
                 self.verify_url,
                 json=payload,
                 headers=headers,
             )
-            
+
             print(f"🔍 Response Status: {response.status_code}")
             print(f"🔍 Response Headers: {dict(response.headers)}")
             print(f"🔍 Response Body: {response.text}")
