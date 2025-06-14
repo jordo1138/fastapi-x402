@@ -21,7 +21,7 @@ from .networks import (
     get_supported_testnets,
 )
 
-__version__ = "0.1.1"
+__version__ = "0.1.3"
 __all__ = [
     # Core functionality
     "init_x402",
