@@ -52,10 +52,8 @@ class UnifiedFacilitatorClient:
     ):
         self.base_url = base_url.rstrip("/")
 
-        # Detect if this is Coinbase CDP facilitator
-        self.is_coinbase_cdp = "cdp.coinbase.com" in self.base_url or (
-            cdp_api_key_id is not None and cdp_api_key_secret is not None
-        )
+        # Detect if this is Coinbase CDP facilitator (based on URL only)
+        self.is_coinbase_cdp = "cdp.coinbase.com" in self.base_url
 
         # Store CDP credentials if provided
         self.cdp_api_key_id = cdp_api_key_id or os.getenv("CDP_API_KEY_ID")
