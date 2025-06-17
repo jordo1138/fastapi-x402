@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-x402"
-version = "0.1.5"
+version = "0.1.6"
 description = "One-liner x402 pay-per-request for FastAPI endpoints"
 readme = "README.md"
 license = { text = "MIT" }
