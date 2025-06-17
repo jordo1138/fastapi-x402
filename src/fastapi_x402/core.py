@@ -271,7 +271,7 @@ def get_facilitator_client() -> "UnifiedFacilitatorClient":
 
     # Auto-detect facilitator based on network and credentials
     facilitator_url = config.facilitator_url
-    
+
     # If facilitator_url is explicitly set in env, use it; otherwise auto-detect
     if facilitator_url is None:
         # Check if the default network is a testnet
