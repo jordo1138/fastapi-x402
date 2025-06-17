@@ -271,7 +271,9 @@ def get_facilitator_client() -> "UnifiedFacilitatorClient":
 
     # Auto-detect facilitator based on network and credentials
     facilitator_url = config.facilitator_url
-    if not facilitator_url:
+    
+    # If facilitator_url is explicitly set in env, use it; otherwise auto-detect
+    if facilitator_url is None:
         # Check if the default network is a testnet
         # Get the first network if multiple networks are configured
         network = (
@@ -288,6 +290,7 @@ def get_facilitator_client() -> "UnifiedFacilitatorClient":
         else:
             # Mainnet without CDP credentials -> fallback to x402.org
             facilitator_url = "https://x402.org/facilitator"
+    # If facilitator_url was explicitly set, use it as-is
 
     from .facilitator import UnifiedFacilitatorClient
 

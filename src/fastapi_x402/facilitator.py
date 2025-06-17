@@ -79,8 +79,8 @@ class UnifiedFacilitatorClient:
 
         # Set up endpoints
         if self.is_coinbase_cdp:
-            self.verify_url = f"{self.base_url}/verify"
-            self.settle_url = f"{self.base_url}/settle"
+            self.verify_url = f"{self.base_url}/platform/v2/x402/verify"
+            self.settle_url = f"{self.base_url}/platform/v2/x402/settle"
         else:
             self.verify_url = f"{self.base_url}/verify"
             self.settle_url = f"{self.base_url}/settle"
