@@ -39,7 +39,7 @@ pip install fastapi-x402
 
 ### 1. Environment Setup
 
-Create a `.env` file in your project root:
+Create a `.env` file in your project root. Copy .env.example -> .env:
 
 ```bash
 # Required: Your merchant wallet address  
@@ -321,7 +321,7 @@ To accept payments on mainnet networks, you need Coinbase Developer Platform (CD
 # CDP_API_KEY_ID=[REDACTED:api-key]
 # CDP_API_KEY_SECRET=[REDACTED:api-key]
 
-> **Note**: Based on the official Coinbase x402 Python implementation, facilitator requests use simple HTTP without authentication headers. CDP credentials may be stored for future use but are not currently required for facilitator API calls.
+> **Note**: Based on the recently added official Coinbase x402 Python implementation, facilitator requests use simple HTTP without authentication headers. This is only implemented in testnet there. CDP credentials be stored for future use but are currently required for facilitator API calls for using mainnet facilitator hosted on CDP.
 
 ### 3. Add to Environment
 ```bash

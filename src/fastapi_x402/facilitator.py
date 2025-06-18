@@ -94,18 +94,18 @@ class UnifiedFacilitatorClient:
                 "user-agent": "fastapi-x402-python",
             }
 
-        # Generate JWT for Coinbase CDP
+        # Generate JWT for Coinbase CDP (matching TypeScript implementation)
+        request_host = "api.cdp.coinbase.com"
         request_path = f"/platform/v2/x402/{endpoint}"
 
         try:
+            # Use official CDP SDK parameters (matching the official implementation)
             options = JwtOptions(
                 api_key_id=self.cdp_api_key_id,
                 api_key_secret=self.cdp_api_key_secret,
-                method="POST",
-                uri=request_path,
-                service="x402",
-                nonce=self._generate_nonce(),
-                expiry=int(time.time()) + 300,  # 5 minutes
+                request_method="POST",
+                request_host=request_host,
+                request_path=request_path,
             )
             jwt_token = generate_jwt(options)
         except Exception as e:
@@ -116,7 +116,7 @@ class UnifiedFacilitatorClient:
             "content-type": "application/json",
             "user-agent": "fastapi-x402-python",
             "Authorization": f"Bearer {jwt_token}",
-            "Correlation-Context": f"x402-version=0.1.2,sdk-version=1.0.0,correlation-header={self._generate_nonce()}",
+            "Correlation-Context": "sdk_version=1.1.1,sdk_language=python,source=x402,source_version=0.1.6",
         }
 
     def _generate_nonce(self) -> str:
@@ -138,11 +138,24 @@ class UnifiedFacilitatorClient:
                     error=f"Failed to decode payment header: {str(e)}",
                 )
 
-            # Create request payload (same format for both)
-            payload = {
-                "paymentPayload": to_json_safe(payment_obj),
-                "paymentRequirements": to_json_safe(payment_requirements.model_dump()),
-            }
+            # Create request payload
+            if self.is_coinbase_cdp:
+                # CDP facilitator requires x402Version at top level
+                payload = {
+                    "x402Version": 1,
+                    "paymentPayload": to_json_safe(payment_obj),
+                    "paymentRequirements": to_json_safe(
+                        payment_requirements.model_dump()
+                    ),
+                }
+            else:
+                # x402.org facilitator uses original format
+                payload = {
+                    "paymentPayload": to_json_safe(payment_obj),
+                    "paymentRequirements": to_json_safe(
+                        payment_requirements.model_dump()
+                    ),
+                }
 
             # Get appropriate headers
             headers = self._create_coinbase_headers("verify")
@@ -194,11 +207,24 @@ class UnifiedFacilitatorClient:
                     errorReason=f"Failed to decode payment header: {str(e)}",
                 )
 
-            # Create request payload (same format for both)
-            payload = {
-                "paymentPayload": to_json_safe(payment_obj),
-                "paymentRequirements": to_json_safe(payment_requirements.model_dump()),
-            }
+            # Create request payload
+            if self.is_coinbase_cdp:
+                # CDP facilitator requires x402Version at top level
+                payload = {
+                    "x402Version": 1,
+                    "paymentPayload": to_json_safe(payment_obj),
+                    "paymentRequirements": to_json_safe(
+                        payment_requirements.model_dump()
+                    ),
+                }
+            else:
+                # x402.org facilitator uses original format
+                payload = {
+                    "paymentPayload": to_json_safe(payment_obj),
+                    "paymentRequirements": to_json_safe(
+                        payment_requirements.model_dump()
+                    ),
+                }
 
             # Get appropriate headers
             headers = self._create_coinbase_headers("settle")
