@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>x402 AI Demo - Pay-per-use AI Services</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">🤗 x402 AI Demo 🤗</h1>
+            <p class="text-xl text-gray-600">Pay-per-use AI services powered by FastAPI and fastapi-x402</p>
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <strong>Demo Mode:</strong> Using testnet (Base Sepolia) - No real money required!
+                </p>
+            </div>
+            
+            <!-- Wallet Connection -->
+            <div class="mt-6">
+                <button id="connect-wallet" class="btn btn-primary">
+                    🦊 Connect MetaMask
+                </button>
+                <div id="wallet-status" class="mt-2 text-sm"></div>
+            </div>
+        </header>
+
+        <!-- Service Cards -->
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Text Generation Service -->
+            <div class="service-card bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-2">💭 Text Generation</h2>
+                <div class="price-tag">$0.01 per request</div>
+                <p class="text-gray-600 mb-4">Generate creative text using DistilGPT-2</p>
+                
+                <div class="form-group">
+                    <label class="block text-sm font-medium mb-2">Prompt:</label>
+                    <input 
+                        type="text" 
+                        id="text-prompt" 
+                        placeholder="Once upon a time..."
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        value="The future of AI is"
+                    >
+                    <button 
+                        id="text-btn" 
+                        class="btn btn-primary mt-3 w-full"
+                    >
+                        Generate Text
+                    </button>
+                </div>
+                <div id="text-result" class="result-box mt-4"></div>
+            </div>
+
+            <!-- Sentiment Analysis Service -->
+            <div class="service-card bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold mb-2"> Sentiment Analysis</h2>
+                <div class="price-tag">$0.005 per request</div>
+                <p class="text-gray-600 mb-4">Analyze text sentiment using RoBERTa</p>
+                
+                <div class="form-group">
+                    <label class="block text-sm font-medium mb-2">Text to analyze:</label>
+                    <textarea 
+                        id="sentiment-text" 
+                        placeholder="I love this new technology!"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        rows="3"
+                    >I love using AI for creative projects!</textarea>
+                    <button 
+                        id="sentiment-btn" 
+                        class="btn btn-primary mt-3 w-full"
+                    >
+                        Analyze Sentiment
+                    </button>
+                </div>
+                <div id="sentiment-result" class="result-box mt-4"></div>
+            </div>
+        </div>
+
+        <!-- How it Works -->
+        <div class="mt-12 bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-semibold mb-4">🔧 How it Works</h3>
+            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                <li>Click a service button to make a request</li>
+                <li>FastAPI returns <code class="bg-gray-100 px-1 rounded">402 Payment Required</code> with payment details</li>
+                <li>Your x402-compatible client (like MetaMask) signs the payment</li>
+                <li>FastAPI verifies the payment with the facilitator</li>
+                <li>AI service processes your request and returns results</li>
+            </ol>
+            <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+                <p class="text-sm text-yellow-800">
+                    <strong>Note:</strong> This demo requires an x402-compatible client. 
+                    Try the <a href="/debug" class="text-blue-600 underline">debug endpoint</a> to check configuration.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as viem from 'https://esm.sh/viem@2.23.1';
+        
+        // Global wallet state
+        let walletClient = null;
+        let currentAccount = null;
+        
+        // Initialize wallet connection on page load
+        document.addEventListener('DOMContentLoaded', initWallet);
+        
+        async function initWallet() {
+            const connectBtn = document.getElementById('connect-wallet');
+            const statusDiv = document.getElementById('wallet-status');
+            
+            if (typeof window.ethereum === 'undefined') {
+                statusDiv.innerHTML = '<span class="text-red-600">❌ MetaMask not installed</span>';
+                connectBtn.disabled = true;
+                connectBtn.textContent = 'Install MetaMask';
+                connectBtn.onclick = () => window.open('https://metamask.io/', '_blank');
+                return;
+            }
+            
+            // Check if already connected
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    await connectWallet();
+                }
+            } catch (error) {
+                console.log('No existing connection');
+            }
+            
+            connectBtn.onclick = connectWallet;
+        }
+        
+        async function connectWallet() {
+            const connectBtn = document.getElementById('connect-wallet');
+            const statusDiv = document.getElementById('wallet-status');
+            
+            try {
+                // Request account access
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Switch to Base Sepolia if not already on it
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x14a34' }], // Base Sepolia chainId in hex
+                    });
+                } catch (switchError) {
+                    // Chain not added, try to add it
+                    if (switchError.code === 4902) {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: '0x14a34',
+                                chainName: 'Base Sepolia',
+                                nativeCurrency: {
+                                    name: 'ETH',
+                                    symbol: 'ETH',
+                                    decimals: 18,
+                                },
+                                rpcUrls: ['https://sepolia.base.org'],
+                                blockExplorerUrls: ['https://sepolia-explorer.base.org'],
+                            }],
+                        });
+                    } else {
+                        throw switchError;
+                    }
+                }
+                
+                // Create wallet client with viem
+                walletClient = viem.createWalletClient({
+                    transport: viem.custom(window.ethereum),
+                    chain: viem.baseSepolia, // Base Sepolia testnet
+                });
+                
+                // Get account
+                const [address] = await walletClient.getAddresses();
+                currentAccount = address;
+                
+                // Update UI
+                connectBtn.textContent = `✅ ${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`;
+                connectBtn.disabled = true;
+                statusDiv.innerHTML = '<span class="text-green-600">🎉 Wallet connected to Base Sepolia! Ready to make payments.</span>';
+                
+                console.log('✅ Wallet connected:', currentAccount);
+                
+            } catch (error) {
+                console.error('❌ Failed to connect wallet:', error);
+                let errorMessage = 'Connection failed';
+                if (error.code === 4001) {
+                    errorMessage = 'User rejected connection';
+                } else if (error.code === -32002) {
+                    errorMessage = 'Connection request pending';
+                }
+                statusDiv.innerHTML = `<span class="text-red-600">❌ ${errorMessage}</span>`;
+            }
+        }
+        
+        // Create x402 payment signature using TransferWithAuthorization EIP-712 (matches facilitator exactly)
+        async function createPaymentSignature(paymentRequirements) {
+            if (!walletClient || !currentAccount) {
+                throw new Error('Wallet not connected');
+            }
+            
+            console.log('🔧 Creating payment signature...');
+            
+            // Wait a bit to ensure wallet is fully ready (helps with race conditions)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Double-check wallet state
+            try {
+                const accounts = await walletClient.getAddresses();
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts available');
+                }
+                currentAccount = accounts[0]; // Refresh current account
+                console.log('📝 Wallet verification - current account:', currentAccount);
+            } catch (error) {
+                console.error('❌ Wallet verification failed:', error);
+                throw new Error('Wallet not ready for signing');
+            }
+            
+            // Generate nonce and deadline - ensuring proper format to avoid BigInt issues
+            const currentTime = Math.floor(Date.now() / 1000);
+            const validAfter = currentTime - 60; // Valid 1 minute ago (account for clock skew)
+            const validBefore = currentTime + paymentRequirements.maxTimeoutSeconds; // Valid until timeout
+            
+            // Create a proper 32-byte nonce (64 hex chars) that won't cause BigInt issues
+            const randomBytes = new Uint8Array(32);
+            crypto.getRandomValues(randomBytes);
+            const nonce = '0x' + Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+            
+            console.log('📝 Generated nonce:', nonce, 'length:', nonce.length);
+            
+            // EIP-712 domain for TransferWithAuthorization (matches facilitator exactly)
+            const domain = {
+                name: paymentRequirements.extra?.name || 'USDC',
+                version: paymentRequirements.extra?.version || '2',
+                chainId: 84532, // Base Sepolia
+                verifyingContract: paymentRequirements.asset,
+            };
+            
+            // EIP-712 types for TransferWithAuthorization (matches facilitator)
+            const types = {
+                TransferWithAuthorization: [
+                    { name: 'from', type: 'address' },
+                    { name: 'to', type: 'address' },
+                    { name: 'value', type: 'uint256' },
+                    { name: 'validAfter', type: 'uint256' },
+                    { name: 'validBefore', type: 'uint256' },
+                    { name: 'nonce', type: 'bytes32' },
+                ],
+            };
+            
+            // Create the authorization message (ensure all values are strings, no BigInt)
+            const message = {
+                from: String(currentAccount),
+                to: String(paymentRequirements.payTo),
+                value: String(paymentRequirements.maxAmountRequired), // Ensure string
+                validAfter: String(validAfter),
+                validBefore: String(validBefore),
+                nonce: String(nonce),
+            };
+            
+            console.log('📝 Signing TransferWithAuthorization message:', message);
+            console.log('📝 Domain:', domain);
+            console.log('📝 Message types:', typeof message.value, typeof message.validAfter, typeof message.validBefore);
+            
+            // Sign the EIP-712 TransferWithAuthorization message
+            const signature = await walletClient.signTypedData({
+                account: currentAccount,
+                domain,
+                types,
+                primaryType: 'TransferWithAuthorization',
+                message,
+            });
+            
+            // Create payment payload (ensure all values are strings to avoid BigInt issues)
+            const paymentPayload = {
+                x402Version: 1,
+                scheme: 'exact',
+                network: 'base-sepolia',
+                payload: {
+                    signature: String(signature),
+                    authorization: {
+                        from: String(currentAccount),
+                        to: String(paymentRequirements.payTo),
+                        value: String(paymentRequirements.maxAmountRequired),
+                        validAfter: String(validAfter),
+                        validBefore: String(validBefore),
+                        nonce: String(nonce),
+                    },
+                },
+            };
+            
+            console.log('📝 PaymentPayload before JSON.stringify:', paymentPayload);
+            console.log('📝 Authorization value type:', typeof paymentPayload.payload.authorization.value);
+            
+            // Encode as base64 for X-Payment header (handle any BigInt values)
+            let paymentJson;
+            try {
+                paymentJson = JSON.stringify(paymentPayload, (key, value) => {
+                    // Log any BigInt values we encounter
+                    if (typeof value === 'bigint') {
+                        console.warn('⚠️ Found BigInt in paymentPayload:', key, value);
+                        return value.toString();
+                    }
+                    return value;
+                });
+            } catch (error) {
+                console.error('❌ JSON.stringify error:', error);
+                console.error('❌ PaymentPayload causing error:', paymentPayload);
+                throw new Error(`Failed to serialize payment: ${error.message}`);
+            }
+            const paymentHeader = btoa(paymentJson);
+            
+            console.log('✅ TransferWithAuthorization signature created');
+            
+            // Debug: decode and check the payment header for any issues
+            try {
+                const decodedPayload = JSON.parse(atob(paymentHeader));
+                console.log('📝 Decoded payment payload:', decodedPayload);
+                
+                // Check timing - this might be the issue
+                const now = Math.floor(Date.now() / 1000);
+                const validAfter = Number(decodedPayload.payload.authorization.validAfter);
+                const validBefore = Number(decodedPayload.payload.authorization.validBefore);
+                
+                console.log('📝 Current time:', now);
+                console.log('📝 ValidAfter:', validAfter, '(diff:', now - validAfter, 'seconds)');
+                console.log('📝 ValidBefore:', validBefore, '(diff:', validBefore - now, 'seconds)');
+                
+                // Check timing issues
+                if (now < validAfter) {
+                    console.warn('⚠️ Payment not valid yet! Current time is before validAfter');
+                }
+                if (now >= validBefore) {
+                    console.warn('⚠️ Payment expired! Current time is after validBefore');
+                }
+                
+                // Check authorization structure
+                const auth = decodedPayload.payload.authorization;
+                console.log('📝 Authorization:', {
+                    from: auth.from,
+                    to: auth.to,
+                    value: auth.value,
+                    nonce: auth.nonce
+                });
+                
+            } catch (error) {
+                console.error('❌ Failed to decode payment header:', error);
+            }
+            
+            return paymentHeader;
+        }
+        
+        // Display API results
+        function displayResult(endpoint, result, resultDiv) {
+            if (endpoint.includes('text')) {
+                resultDiv.innerHTML = `
+                    <div class="success-result">
+                        <h4 class="font-semibold text-green-600 mb-2">Generated Text</h4>
+                        <p class="text-gray-800 italic">"${result.result}"</p>
+                        <small class="text-gray-500">Model: ${result.model}</small>
+                    </div>
+                `;
+            } else if (endpoint.includes('sentiment')) {
+                const sentiment = result.sentiment.toUpperCase();
+                const sentimentEmoji = sentiment === 'POSITIVE' ? '👍' : 
+                                     sentiment === 'NEGATIVE' ? '👎' : '😐';
+                                     
+
+                resultDiv.innerHTML = `
+                    <div class="success-result">
+                        <h4 class="font-semibold text-green-600 mb-2"> Sentiment Analysis</h4>
+                        <div class="sentiment-result">
+                            <p class="text-lg">${sentimentEmoji} <strong>${sentiment}</strong></p>
+                            <p class="text-sm text-gray-600">Confidence: ${(result.confidence * 100).toFixed(1)}%</p>
+                            <small class="text-gray-500">Model: ${result.model}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // Enhanced API call handler with proper x402 support
+        async function callApi(endpoint, data, buttonId, resultId) {
+            const button = document.getElementById(buttonId);
+            const resultDiv = document.getElementById(resultId);
+
+            button.disabled = true;
+            button.textContent = 'Processing...';
+            resultDiv.innerHTML = '<div class="loading">🔄 Loading...</div>';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data, (key, value) => {
+                        // Handle BigInt values
+                        if (typeof value === 'bigint') {
+                            return value.toString();
+                        }
+                        return value;
+                    })
+                });
+
+                // Handle 402 Payment Required - Create payment and retry
+                if (response.status === 402) {
+                    const paymentInfo = await response.json();
+                    
+                    if (!walletClient) {
+                        resultDiv.innerHTML = `
+                            <div class="payment-required">
+                                <h4 class="text-lg font-semibold text-orange-600 mb-2">💳 Payment Required</h4>
+                                <p class="text-sm text-gray-600 mb-2">Please connect your MetaMask wallet first.</p>
+                                <div class="mt-3 p-3 bg-gray-50 rounded text-xs">
+                                    <p class="font-semibold mb-2">402 Response Details:</p>
+                                    <pre class="text-gray-700 overflow-x-auto">${JSON.stringify(paymentInfo, null, 2)}</pre>
+                                </div>
+                                <button onclick="connectWallet()" class="btn btn-primary text-sm mt-3">Connect Wallet</button>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    try {
+                        resultDiv.innerHTML = '<div class="loading">💳 Creating payment signature...</div>';
+                        
+                        // Extract payment requirements from the first accept option
+                        const paymentRequirements = paymentInfo.accepts[0];
+                        
+                        // Create payment signature with retry logic for BigInt issues
+                        let paymentHeader;
+                        let attempts = 0;
+                        const maxAttempts = 2;
+                        
+                        while (attempts < maxAttempts) {
+                            try {
+                                paymentHeader = await createPaymentSignature(paymentRequirements);
+                                break; // Success, exit retry loop
+                            } catch (error) {
+                                attempts++;
+                                console.warn(`⚠️ Payment signature attempt ${attempts} failed:`, error.message);
+                                
+                                if (error.message.includes('loop of type') || error.message.includes('bigint')) {
+                                    if (attempts < maxAttempts) {
+                                        console.log('🔄 Retrying payment signature creation...');
+                                        await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retry
+                                        continue;
+                                    }
+                                }
+                                throw error; // Re-throw if not a BigInt error or max attempts reached
+                            }
+                        }
+                        
+                        // Ensure we have a valid payment header before proceeding
+                        if (!paymentHeader) {
+                            throw new Error('Failed to create payment signature');
+                        }
+                        
+                        resultDiv.innerHTML = '<div class="loading">🔄 Processing payment...</div>';
+                        
+                        console.log('💳 Sending payment request to:', endpoint);
+                        console.log('💳 Payment header defined:', paymentHeader !== undefined);
+                        console.log('💳 Payment header length:', paymentHeader?.length);
+                        console.log('💳 Payment header preview:', paymentHeader?.substring(0, 100) + '...');
+                        
+                        // Verify headers before sending
+                        const requestHeaders = { 
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Payment': paymentHeader
+                        };
+                        console.log('💳 Request headers:', requestHeaders);
+                        
+                        // Retry the request with payment header
+                        const paidResponse = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: requestHeaders,
+                            body: JSON.stringify(data, (key, value) => {
+                                // Handle BigInt values
+                                if (typeof value === 'bigint') {
+                                    console.warn('⚠️ Found BigInt in request body:', key, value);
+                                    return value.toString();
+                                }
+                                return value;
+                            })
+                        });
+                        
+                        console.log('💳 Payment response status:', paidResponse.status);
+                        console.log('💳 Payment response headers:', Object.fromEntries(paidResponse.headers.entries()));
+                        
+                        if (!paidResponse.ok) {
+                            const errorText = await paidResponse.text();
+                            console.error('❌ Payment failed - response body:', errorText);
+                            
+                            // If it's a 402, try to parse and show the specific validation error
+                            if (paidResponse.status === 402) {
+                                try {
+                                    const errorObj = JSON.parse(errorText);
+                                    console.error('❌ 402 Payment verification failed:', errorObj);
+                                    console.error('❌ Error message:', errorObj.error);
+                                    
+                                    // Log the payment details for comparison
+                                    const sentPayload = JSON.parse(atob(paymentHeader));
+                                    console.error('❌ Sent payload:', sentPayload);
+                                    console.error('❌ Expected requirements:', errorObj.accepts?.[0]);
+                                    
+                                    // Check for specific error patterns
+                                    if (errorObj.error) {
+                                        if (errorObj.error.includes('signature')) {
+                                            console.error('🔍 SIGNATURE VERIFICATION FAILED');
+                                        } else if (errorObj.error.includes('nonce')) {
+                                            console.error('🔍 NONCE ISSUE');
+                                        } else if (errorObj.error.includes('timing') || errorObj.error.includes('valid')) {
+                                            console.error('🔍 TIMING ISSUE');
+                                        } else if (errorObj.error.includes('funds')) {
+                                            console.error('🔍 INSUFFICIENT FUNDS');
+                                        } else {
+                                            console.error('🔍 OTHER VALIDATION ERROR:', errorObj.error);
+                                        }
+                                    }
+                                } catch (parseError) {
+                                    console.error('❌ Could not parse error response:', parseError);
+                                }
+                            }
+                            
+                            let error;
+                            try {
+                                error = JSON.parse(errorText);
+                            } catch {
+                                error = { error: errorText };
+                            }
+                            
+                            throw new Error(error.detail || error.error || `Payment failed (${paidResponse.status})`);
+                        }
+                        
+                        // Payment successful, process the result
+                        const result = await paidResponse.json();
+                        displayResult(endpoint, result, resultDiv);
+                        return;
+                        
+                    } catch (paymentError) {
+                        resultDiv.innerHTML = `
+                            <div class="error-result">
+                                <h4 class="font-semibold text-red-600 mb-2">💳 Payment Failed</h4>
+                                <p class="text-red-700">${paymentError.message}</p>
+                                <p class="text-sm text-gray-600 mt-2">Make sure you have testnet USDC on Base Sepolia.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || error.error || 'Request failed');
+                }
+
+                const result = await response.json();
+                displayResult(endpoint, result, resultDiv);
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error-result">
+                        <h4 class="font-semibold text-red-600 mb-2">❌ Error</h4>
+                        <p class="text-red-700">${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                button.disabled = false;
+                button.textContent = button.id.includes('text') ? 'Generate Text' : 'Analyze Sentiment';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('text-btn').addEventListener('click', () => {
+            const prompt = document.getElementById('text-prompt').value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt!');
+                return;
+            }
+            callApi('/generate-text', { prompt }, 'text-btn', 'text-result');
+        });
+
+        document.getElementById('sentiment-btn').addEventListener('click', () => {
+            const text = document.getElementById('sentiment-text').value.trim();
+            if (!text) {
+                alert('Please enter text to analyze!');
+                return;
+            }
+            callApi('/analyze-sentiment', { text }, 'sentiment-btn', 'sentiment-result');
+        });
+
+        // Allow Enter key to submit
+        document.getElementById('text-prompt').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('text-btn').click();
+        });
+    </script>
+</body>
+</html>

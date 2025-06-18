@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fastapi-x402"
-version = "0.1.7"
+version = "0.1.8"
 description = "One-liner x402 pay-per-request for FastAPI endpoints"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    {name = "FastAPI x402", email = "hello@fastapi-x402.dev"}
+    {name = "Jordan Hamel", email = "jordanhamel@gmail.com"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

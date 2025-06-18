@@ -1,0 +1,19 @@
+# FastAPI and x402
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-dotenv>=1.0.0
+fastapi-x402>=0.1.6
+
+# AI/ML libraries  
+torch>=2.0.0
+transformers>=4.35.0
+accelerate>=0.24.0
+
+# Web framework dependencies
+jinja2>=3.1.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+aiofiles>=23.0.0
+
+# Optional: for better performance
+# tokenizers>=0.15.0

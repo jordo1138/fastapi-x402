@@ -54,6 +54,10 @@ class PaymentMiddleware(BaseHTTPMiddleware):
         for route in request.app.routes:
             match, _ = route.matches(request.scope)
             if match == Match.FULL:
+                # Skip routes that don't have endpoints (like Mount objects for static files)
+                if not hasattr(route, "endpoint"):
+                    continue
+
                 route_handler = route.endpoint
 
                 # Check if this endpoint requires payment by function name

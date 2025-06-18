@@ -392,7 +392,21 @@ Check out the `/examples` directory for:
 - Advanced configuration
 - Testing utilities
 
-## 🆘 Support
+## 🆘 Support & Troubleshooting
+
+### Common Issues
+
+**"Can't patch loop of type uvloop.Loop" Error**
+If you encounter this error, disable uvloop by using standard asyncio:
+```python
+# Instead of: uvicorn.run(app)
+uvicorn.run(app, loop="asyncio")
+```
+
+**Static Files Not Working**
+Ensure you're using the latest version (≥0.1.7) which fixes Mount object compatibility.
+
+### Support Channels
 
 - **Issues**: [GitHub Issues](https://github.com/jordo1138/fastapi-x402/issues)
 - **Documentation**: [x402 protocol docs](https://x402.org)

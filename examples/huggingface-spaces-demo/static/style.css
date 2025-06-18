@@ -1,0 +1,71 @@
+/* Custom styles for x402 AI Demo */
+
+.btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-colors duration-200;
+}
+
+.btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed;
+}
+
+.price-tag {
+    @apply inline-block bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full mb-3;
+}
+
+.service-card {
+    @apply border-t-4 border-blue-500;
+}
+
+.result-box {
+    @apply min-h-16 p-4 bg-gray-50 rounded-lg border;
+}
+
+.loading {
+    @apply text-center text-gray-600 animate-pulse;
+}
+
+.success-result {
+    @apply p-4 bg-green-50 border border-green-200 rounded-lg;
+}
+
+.error-result {
+    @apply p-4 bg-red-50 border border-red-200 rounded-lg;
+}
+
+.payment-required {
+    @apply p-4 bg-orange-50 border border-orange-200 rounded-lg;
+}
+
+.sentiment-result {
+    @apply text-center py-2;
+}
+
+/* Loading animation */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Code blocks */
+code {
+    @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+pre {
+    @apply text-xs font-mono whitespace-pre-wrap;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        @apply px-2;
+    }
+    
+    .service-card {
+        @apply p-4;
+    }
+}

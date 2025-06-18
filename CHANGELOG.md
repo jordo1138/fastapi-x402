@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2025-01-18
+
+### Fixed
+- Fixed middleware crash when using `app.mount()` for static files or other mounted applications
+- Added workaround documentation for uvloop compatibility issues
+
+### Changed
+- Improved error handling for Mount objects in middleware route matching
+- Enhanced troubleshooting documentation
+
 ## [0.1.0] - 2025-01-07
 
 ### Added
